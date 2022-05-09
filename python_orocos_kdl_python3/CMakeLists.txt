@@ -10,23 +10,19 @@ if(POLICY CMP0057)
   cmake_policy(SET CMP0057 NEW)  # support IN_LISTS which is required for PyBind11 2.6 and newer
 endif()
 
-project(python_orocos_kdl VERSION 1.5.1)
+project(python_orocos_kdl_python3 VERSION 1.5.1)
 
 # find a matching version of orocos_kdl
 find_package(orocos_kdl ${PROJECT_VERSION} EXACT REQUIRED)
 include_directories(${orocos_kdl_INCLUDE_DIRS})
 link_directories(${orocos_kdl_LIBRARY_DIRS})
 
-if(DEFINED ENV{ROS_PYTHON_VERSION})
-  SET(PYTHON_VERSION $ENV{ROS_PYTHON_VERSION} CACHE STRING "Python Version")
-else()
-  SET(PYTHON_VERSION 3 CACHE STRING "Python Version")
-endif()
 
+set(Python_ADDITIONAL_VERSIONS 3.6;3.7;3.8) ## https://stackoverflow.com/questions/29245558/how-to-link-with-python3-libs-with-cmake
+find_package(PythonInterp 3 REQUIRED) ## cv_bridge_python3 :: use Python3 by default
+find_package(PythonLibs "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
 set(PYBIND11_PYTHON_VERSION ${PYTHON_VERSION} CACHE STRING "Python version used by PyBind11")
 
-find_package(PythonInterp ${PYTHON_VERSION} REQUIRED)
-find_package(PythonLibs ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR} REQUIRED)
 # get_python_lib in python3 produces path which isn't in sys.path: https://bugs.launchpad.net/ubuntu/+source/python3-stdlib-extensions/+bug/1832215
 # execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(plat_specific=True, prefix=''))" OUTPUT_VARIABLE PYTHON_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
 set(PYTHON_SITE_PACKAGES_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/dist-packages")  # This might be overridden below if built with catkin.
@@ -66,3 +62,8 @@ pybind11_add_module(${LIBRARY_NAME}
   PyKDL/dynamics.cpp)
 target_link_libraries(${LIBRARY_NAME} PRIVATE ${orocos_kdl_LIBRARIES})
 install(TARGETS ${LIBRARY_NAME} DESTINATION "${PYTHON_SITE_PACKAGES_INSTALL_DIR}")
+
+## python_orocos_kdl_pytyhon3 :: re-set PROJECT_NAME to python_orocos_kdl
+set(PROJECT_NAME python_orocos_kdl)
+## python_orocos_kdl_pytyhon3 :: re-set CATKIN_PACKAGE_PYTHON_DESTINATION with PROJECT_NAME as python_orocos_kdl
+set(CATKIN_PACKAGE_PYTHON_DESTINATION lib/python${PYTHON_VERSION_MAJOR}/dist-packages/${PROJECT_NAME})
